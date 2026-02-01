@@ -22,15 +22,34 @@ import {
   Save,
   Info,
   Building,
-  CreditCard
+  CreditCard,
+  FileUp,
+  ChevronLeft,
+  Calendar,
+  DollarSign,
+  User
 } from 'lucide-react';
-import { Notification, EmployeeRole } from './types';
+import { Notification, EmployeeRole, Employee } from './types';
 import { MOCK_EMPLOYEES } from './constants';
 
-const EmployeesPlaceholder = () => {
+const EmployeesPlaceholder = ({ onAddEmployee }: { onAddEmployee: (emp: Employee) => void }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState('All Departments');
   const [roleFilter, setRoleFilter] = useState('All Roles');
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Modals
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Form State
+  const [newEmp, setNewEmp] = useState<Partial<Employee>>({
+    role: EmployeeRole.EMPLOYEE,
+    taxStatus: 'TK/0'
+  });
 
   const departments = useMemo(() => {
     const depts = new Set(MOCK_EMPLOYEES.map(emp => emp.department));
@@ -50,6 +69,25 @@ const EmployeesPlaceholder = () => {
     });
   }, [searchQuery, deptFilter, roleFilter]);
 
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const paginatedEmployees = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredEmployees.slice(start, start + itemsPerPage);
+  }, [filteredEmployees, currentPage]);
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const employee: Employee = {
+      ...newEmp,
+      id: `EMP00${MOCK_EMPLOYEES.length + 1}`,
+      joinDate: new Date().toISOString().split('T')[0],
+      age: 25, // default
+    } as Employee;
+    onAddEmployee(employee);
+    setIsAddModalOpen(false);
+    setNewEmp({ role: EmployeeRole.EMPLOYEE, taxStatus: 'TK/0' });
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -57,10 +95,22 @@ const EmployeesPlaceholder = () => {
           <h3 className="text-2xl font-bold text-slate-800">Employee Directory</h3>
           <p className="text-slate-500">Manage your workforce, roles, and department assignments.</p>
         </div>
-        <button className="flex items-center justify-center space-x-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-100 transition-all">
-          <UserPlus size={18} />
-          <span>Add Employee</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-center space-x-2 px-6 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition-all"
+          >
+            <FileUp size={18} />
+            <span>Import Employee</span>
+          </button>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center justify-center space-x-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-100 transition-all"
+          >
+            <UserPlus size={18} />
+            <span>Add Employee</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col lg:flex-row gap-4">
@@ -70,7 +120,7 @@ const EmployeesPlaceholder = () => {
             type="text" 
             placeholder="Search by name, email, or ID..." 
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
           />
         </div>
@@ -79,7 +129,7 @@ const EmployeesPlaceholder = () => {
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <select 
               value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
+              onChange={(e) => { setDeptFilter(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl appearance-none focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-medium text-slate-700"
             >
               {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
@@ -89,7 +139,7 @@ const EmployeesPlaceholder = () => {
             <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <select 
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl appearance-none focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-medium text-slate-700"
             >
               {roles.map(role => <option key={role} value={role}>{role}</option>)}
@@ -98,69 +148,188 @@ const EmployeesPlaceholder = () => {
         </div>
       </div>
 
-      {filteredEmployees.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEmployees.map(emp => (
-            <div key={emp.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400">
-                  <MoreVertical size={16} />
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 border-b border-slate-100">
+              <tr>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Position & Dept</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Join Date</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedEmployees.length > 0 ? paginatedEmployees.map(emp => (
+                <tr key={emp.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
+                        {emp.name[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-800 truncate">{emp.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{emp.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-semibold text-slate-700">{emp.position}</p>
+                    <p className="text-xs text-slate-400">{emp.department}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
+                      emp.role === EmployeeRole.ADMIN ? 'bg-indigo-100 text-indigo-700' :
+                      emp.role === EmployeeRole.MANAGER ? 'bg-blue-100 text-blue-700' :
+                      'bg-slate-100 text-slate-600'
+                    }`}>
+                      {emp.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-500 font-medium">{emp.joinDate}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <MoreVertical size={16} />
+                    </button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center">
+                      <Search className="text-slate-200 mb-4" size={48} />
+                      <p className="text-slate-500 font-medium">No employees found.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Footer */}
+        {filteredEmployees.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing <span className="text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-900">{Math.min(currentPage * itemsPerPage, filteredEmployees.length)}</span> of <span className="text-slate-900">{filteredEmployees.length}</span> employees
+            </p>
+            <div className="flex items-center space-x-2">
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                className={`p-1.5 rounded-lg border border-slate-200 transition-colors ${currentPage === 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-white'}`}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                    currentPage === page 
+                      ? 'bg-blue-600 text-white shadow-md' 
+                      : 'text-slate-500 hover:bg-white border border-transparent hover:border-slate-200'
+                  }`}
+                >
+                  {page}
                 </button>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0">
-                  {emp.name[0]}
+              ))}
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+                className={`p-1.5 rounded-lg border border-slate-200 transition-colors ${currentPage === totalPages ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-white'}`}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Add Employee Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">New Employee Registration</h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <XCircle size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleAddSubmit} className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input required value={newEmp.name || ''} onChange={e => setNewEmp({...newEmp, name: e.target.value})} type="text" className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium" placeholder="John Doe" />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-slate-800 truncate">{emp.name}</h4>
-                  <p className="text-xs text-slate-400 font-medium mb-3 uppercase tracking-wider">{emp.id}</p>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center text-xs text-slate-500">
-                      <Briefcase size={12} className="mr-2 text-slate-400" />
-                      <span className="truncate">{emp.position}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-slate-500">
-                      <Users size={12} className="mr-2 text-slate-400" />
-                      <span>{emp.department}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-slate-500">
-                      <Mail size={12} className="mr-2 text-slate-400" />
-                      <span className="truncate">{emp.email}</span>
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input required value={newEmp.email || ''} onChange={e => setNewEmp({...newEmp, email: e.target.value})} type="email" className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium" placeholder="john@example.com" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Position</label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input required value={newEmp.position || ''} onChange={e => setNewEmp({...newEmp, position: e.target.value})} type="text" className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium" placeholder="Marketing Lead" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Department</label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input required value={newEmp.department || ''} onChange={e => setNewEmp({...newEmp, department: e.target.value})} type="text" className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium" placeholder="Operations" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Role</label>
+                  <select value={newEmp.role} onChange={e => setNewEmp({...newEmp, role: e.target.value as EmployeeRole})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium bg-white">
+                    {Object.values(EmployeeRole).map(role => <option key={role} value={role}>{role}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Salary (IDR)</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input required value={newEmp.salary || ''} onChange={e => setNewEmp({...newEmp, salary: Number(e.target.value)})} type="number" className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium" placeholder="10000000" />
                   </div>
                 </div>
               </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                  emp.role === EmployeeRole.ADMIN ? 'bg-indigo-100 text-indigo-700' :
-                  emp.role === EmployeeRole.MANAGER ? 'bg-blue-100 text-blue-700' :
-                  'bg-slate-100 text-slate-600'
-                }`}>
-                  {emp.role}
-                </span>
-                <button className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center">
-                  Profile <ChevronRight size={14} className="ml-1" />
-                </button>
+              <div className="flex items-center space-x-3 pt-4">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 transition-all">Cancel</button>
+                <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 transition-all">Save Employee</button>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-3xl p-12 text-center space-y-4 border border-slate-100 shadow-sm">
-          <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
-            <Search size={32} />
+            </form>
           </div>
-          <h3 className="text-xl font-bold text-slate-800">No employees found</h3>
-          <p className="text-slate-500 max-w-md mx-auto">Try adjusting your filters or search terms to find what you're looking for.</p>
-          <button 
-            onClick={() => { setSearchQuery(''); setDeptFilter('All Departments'); setRoleFilter('All Roles'); }}
-            className="text-blue-600 font-bold hover:underline"
-          >
-            Clear all filters
-          </button>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl space-y-6 animate-in zoom-in duration-200 text-center">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+              <FileUp size={32} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-slate-800">Mass Import Employees</h3>
+              <p className="text-sm text-slate-500">Upload a CSV or Excel file to add multiple employees at once. Download our template for the correct format.</p>
+            </div>
+            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 hover:bg-slate-50 hover:border-blue-400 transition-all cursor-pointer group">
+              <p className="text-sm font-bold text-slate-400 group-hover:text-blue-600">Click to Select File</p>
+              <p className="text-xs text-slate-300 mt-1">.csv, .xlsx up to 10MB</p>
+            </div>
+            <div className="flex flex-col space-y-3">
+              <button className="text-blue-600 text-xs font-bold uppercase hover:underline">Download Template (.csv)</button>
+              <button onClick={() => setIsImportModalOpen(false)} className="w-full py-3 bg-slate-900 text-white rounded-2xl font-bold shadow-lg transition-all">Close</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -412,10 +581,26 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
+  const handleAddEmployee = (emp: Employee) => {
+    MOCK_EMPLOYEES.unshift(emp); // In-memory update
+    const successNotif: Notification = {
+      id: Date.now().toString(),
+      userId: 'admin',
+      title: 'Employee Added',
+      message: `${emp.name} has been added to the directory.`,
+      timestamp: 'Just now',
+      isRead: false,
+      type: 'SUCCESS'
+    };
+    setNotifications(prev => [successNotif, ...prev]);
+    setToast(successNotif);
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
-      case 'employees': return <EmployeesPlaceholder />;
+      case 'employees': return <EmployeesPlaceholder onAddEmployee={handleAddEmployee} />;
       case 'attendance': return <Attendance />;
       case 'payroll': return <Payroll />;
       case 'ess': return <ESS />;
