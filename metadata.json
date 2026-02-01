@@ -1,0 +1,8 @@
+{
+  "name": "HRIS Pro - Integrated HR Management System",
+  "description": "A comprehensive Human Resource Information System featuring automated payroll, PPh 21 tax compliance (TER 2024), GPS-based attendance with face recognition, and employee self-service.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
