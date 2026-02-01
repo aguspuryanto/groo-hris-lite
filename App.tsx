@@ -16,7 +16,13 @@ import {
   ChevronRight,
   MoreVertical,
   Mail,
-  Briefcase
+  Briefcase,
+  ShieldCheck,
+  Percent,
+  Save,
+  Info,
+  Building,
+  CreditCard
 } from 'lucide-react';
 import { Notification, EmployeeRole } from './types';
 import { MOCK_EMPLOYEES } from './constants';
@@ -57,7 +63,6 @@ const EmployeesPlaceholder = () => {
         </button>
       </div>
 
-      {/* Search and Filters */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -93,7 +98,6 @@ const EmployeesPlaceholder = () => {
         </div>
       </div>
 
-      {/* Employee List */}
       {filteredEmployees.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map(emp => (
@@ -163,23 +167,178 @@ const EmployeesPlaceholder = () => {
   );
 };
 
-const SettingsPlaceholder = () => (
-  <div className="bg-white rounded-3xl p-12 text-center space-y-4 border border-slate-100 shadow-sm">
-    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
-      <SettingsIcon size={32} />
-    </div>
-    <h3 className="text-xl font-bold text-slate-800">System Configuration</h3>
-    <p className="text-slate-500 max-w-md mx-auto">Configure PPh 21 settings, BPJS caps, shift rules, and company information.</p>
-    <div className="flex flex-col space-y-2 pt-6 text-left max-w-sm mx-auto">
-      {['Tax TER Tables 2024', 'BPJS Rates', 'BCA KlikBCA Settings', 'Role Permissions'].map(item => (
-        <div key={item} className="p-4 bg-slate-50 rounded-xl flex items-center justify-between">
-          <span className="text-sm font-semibold">{item}</span>
-          <button className="text-blue-600 text-xs font-bold uppercase hover:underline">Edit</button>
+const SettingsPlaceholder = ({ onSaveSettings }: { onSaveSettings: () => void }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'bpjs' | 'tax' | 'bank'>('bpjs');
+  
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h3 className="text-2xl font-bold text-slate-800">Compliance Settings</h3>
+          <p className="text-slate-500">Configure regulatory rates and contribution caps.</p>
         </div>
-      ))}
+        <button 
+          onClick={onSaveSettings}
+          className="flex items-center space-x-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-100 transition-all"
+        >
+          <Save size={18} />
+          <span>Save Changes</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="border-b border-slate-100 flex overflow-x-auto">
+          {[
+            { id: 'bpjs', label: 'BPJS Rates', icon: ShieldCheck },
+            { id: 'tax', label: 'PPh 21 (TER)', icon: Percent },
+            { id: 'bank', label: 'Bank Integrations', icon: CreditCard },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSubTab(tab.id as any)}
+              className={`flex items-center space-x-2 px-8 py-5 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
+                activeSubTab === tab.id 
+                  ? 'border-blue-600 text-blue-600 bg-blue-50/30' 
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <tab.icon size={18} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="p-8">
+          {activeSubTab === 'bpjs' && (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <Building size={16} />
+                  </div>
+                  <h4 className="font-bold text-slate-800">BPJS Kesehatan Configuration</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Contribution Rate (%)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">CO:</span>
+                        <input type="number" defaultValue="4.0" className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">EMP:</span>
+                        <input type="number" defaultValue="1.0" className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Monthly Salary Cap (Rp)</label>
+                    <input type="number" defaultValue="12000000" className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8 border-t border-slate-100">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <h4 className="font-bold text-slate-800">BPJS Ketenagakerjaan</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">JKK Rate (%)</label>
+                    <input type="number" defaultValue="0.24" className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">JKM Rate (%)</label>
+                    <input type="number" defaultValue="0.30" className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">JHT Rate (%) (Company / Emp)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="number" defaultValue="3.7" className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                      <input type="number" defaultValue="2.0" className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">JP Salary Cap (Rp)</label>
+                    <input type="number" defaultValue="10047900" className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-sm" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === 'tax' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800">
+                <Info size={20} className="shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-bold mb-1">PPh 21 TER 2024 Compliance</p>
+                  <p className="text-xs opacity-80">Tarif Efektif Rata-rata (TER) berlaku mulai 1 Januari 2024. Sesuaikan persentase berdasarkan status PTKP di bawah ini.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { cat: 'Category A', status: 'TK/0, TK/1, K/0', rate: '0% - 30%' },
+                  { cat: 'Category B', status: 'TK/2, TK/3, K/1, K/2', rate: '0% - 31%' },
+                  { cat: 'Category C', status: 'K/3', rate: '0% - 34%' },
+                ].map((item, i) => (
+                  <div key={i} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="font-bold text-slate-800">{item.cat}</p>
+                        <p className="text-xs text-slate-400">{item.status}</p>
+                      </div>
+                      <button className="text-blue-600 text-xs font-bold uppercase hover:underline">Edit Table</button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-3 bg-white rounded-xl border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Bracket 1 (0 - 5.4M)</p>
+                        <p className="text-sm font-bold">0%</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Bracket 2 (5.4M - 6.5M)</p>
+                        <p className="text-sm font-bold">0.25%</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Bracket 3 (6.5M - 7.5M)</p>
+                        <p className="text-sm font-bold">0.50%</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === 'bank' && (
+            <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+                <CreditCard size={32} />
+              </div>
+              <h4 className="text-xl font-bold">KlikBCA Bisnis Integration</h4>
+              <p className="text-slate-500 max-w-sm">Manage your corporate account credentials and export formats for BCA mass transfers.</p>
+              <div className="w-full max-w-md p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 text-left">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Corporate ID</label>
+                  <input type="text" defaultValue="HRPRO_CORP_01" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Source Account</label>
+                  <input type="text" defaultValue="1234-567-890" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -210,21 +369,11 @@ const App: React.FC = () => {
       timestamp: 'Yesterday',
       isRead: true,
       type: 'WARNING'
-    },
-    {
-      id: '4',
-      userId: 'admin',
-      title: 'Company Announcement',
-      message: 'Town hall meeting will be held on Friday at 3 PM in the main lounge.',
-      timestamp: '2 days ago',
-      isRead: true,
-      type: 'INFO'
     }
   ]);
 
   const [toast, setToast] = useState<Notification | null>(null);
 
-  // Simulate push notifications
   useEffect(() => {
     const timer = setTimeout(() => {
       const newNotif: Notification = {
@@ -238,16 +387,29 @@ const App: React.FC = () => {
       };
       setNotifications(prev => [newNotif, ...prev]);
       setToast(newNotif);
-      
-      // Auto-hide toast
       setTimeout(() => setToast(null), 5000);
-    }, 10000);
+    }, 15000);
 
     return () => clearTimeout(timer);
   }, []);
 
   const markAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleSaveSettings = () => {
+    const successNotif: Notification = {
+      id: Date.now().toString(),
+      userId: 'admin',
+      title: 'Settings Saved',
+      message: 'Compliance rates and tax tables have been updated successfully.',
+      timestamp: 'Just now',
+      isRead: false,
+      type: 'SUCCESS'
+    };
+    setNotifications(prev => [successNotif, ...prev]);
+    setToast(successNotif);
+    setTimeout(() => setToast(null), 4000);
   };
 
   const renderContent = () => {
@@ -257,7 +419,7 @@ const App: React.FC = () => {
       case 'attendance': return <Attendance />;
       case 'payroll': return <Payroll />;
       case 'ess': return <ESS />;
-      case 'settings': return <SettingsPlaceholder />;
+      case 'settings': return <SettingsPlaceholder onSaveSettings={handleSaveSettings} />;
       default: return <Dashboard />;
     }
   };
@@ -271,11 +433,13 @@ const App: React.FC = () => {
     >
       {renderContent()}
 
-      {/* Real-time Push Notification Toast */}
       {toast && (
         <div className="fixed bottom-8 right-8 z-50 animate-in slide-in-from-right-10 fade-in duration-300">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 w-80 flex items-start space-x-4">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
+            <div className={`p-2 rounded-xl ${
+              toast.type === 'SUCCESS' ? 'bg-emerald-100 text-emerald-600' : 
+              toast.type === 'ALERT' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
+            }`}>
               <BellRing size={20} className="animate-bounce" />
             </div>
             <div className="flex-1">
@@ -284,12 +448,6 @@ const App: React.FC = () => {
                 <button onClick={() => setToast(null)}><XCircle size={14} className="text-slate-400" /></button>
               </div>
               <p className="text-xs text-slate-500 mt-1">{toast.message}</p>
-              <button 
-                onClick={() => { setActiveTab('dashboard'); setToast(null); }}
-                className="mt-2 text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider"
-              >
-                View Details
-              </button>
             </div>
           </div>
         </div>
